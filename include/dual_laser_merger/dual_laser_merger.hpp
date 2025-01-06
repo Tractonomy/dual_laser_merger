@@ -80,7 +80,9 @@ private:
   std::string target_frame_param;
   double tolerance_param, min_height_param, max_height_param, angle_min_param, angle_max_param, angle_increment_param,
       scan_time_param, range_min_param, range_max_param, inf_epsilon_param, laser_1_x_offset, laser_1_y_offset,
-      laser_1_yaw_offset, laser_2_x_offset, laser_2_y_offset, laser_2_yaw_offset, allowed_radius_param;
+      laser_1_z_offset, laser_1_yaw_offset, laser_1_pitch_offset, laser_1_roll_offset, laser_2_x_offset,
+      laser_2_y_offset, laser_2_z_offset, laser_2_yaw_offset, laser_2_pitch_offset, laser_2_roll_offset,
+      allowed_radius_param;
   bool use_inf_param, enable_shadow_filter_param, enable_average_filter_param;
   uint32_t ranges_size;
   double range, angle;

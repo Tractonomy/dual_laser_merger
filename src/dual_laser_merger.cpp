@@ -77,10 +77,16 @@ void MergerNode::declare_param()
   use_inf_param = this->declare_parameter("use_inf", true);
   laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0);
   laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0);
+  laser_1_z_offset = this->declare_parameter("laser_1_z_offset", 0.0);
   laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0);
+  laser_1_pitch_offset = this->declare_parameter("laser_1_pitch_offset", 0.0);
+  laser_1_roll_offset = this->declare_parameter("laser_1_roll_offset", 0.0);
   laser_2_x_offset = this->declare_parameter("laser_2_x_offset", 0.0);
   laser_2_y_offset = this->declare_parameter("laser_2_y_offset", 0.0);
+  laser_2_z_offset = this->declare_parameter("laser_2_z_offset", 0.0);
   laser_2_yaw_offset = this->declare_parameter("laser_2_yaw_offset", 0.0);
+  laser_2_pitch_offset = this->declare_parameter("laser_2_pitch_offset", 0.0);
+  laser_2_roll_offset = this->declare_parameter("laser_2_roll_offset", 0.0);
   allowed_radius_param = this->declare_parameter("allowed_radius", 1.0);
   enable_shadow_filter_param = this->declare_parameter("enable_shadow_filter", false);
   enable_average_filter_param = this->declare_parameter("enable_average_filter", false);
@@ -191,10 +197,25 @@ rcl_interfaces::msg::SetParametersResult MergerNode::refresh_param(const std::ve
         laser_1_y_offset = param.as_double();
         RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_y_offset' to : %.3f", laser_1_y_offset);
       }
+      else if (param.get_name() == "laser_1_z_offset")
+      {
+        laser_1_z_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_z_offset' to : %.3f", laser_1_z_offset);
+      }
       else if (param.get_name() == "laser_1_yaw_offset")
       {
         laser_1_yaw_offset = param.as_double();
         RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_yaw_offset' to : %.3f", laser_1_yaw_offset);
+      }
+      else if (param.get_name() == "laser_1_pitch_offset")
+      {
+        laser_1_pitch_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_pitch_offset' to : %.3f", laser_1_pitch_offset);
+      }
+      else if (param.get_name() == "laser_1_roll_offset")
+      {
+        laser_1_roll_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_roll_offset' to : %.3f", laser_1_roll_offset);
       }
       else if (param.get_name() == "laser_2_x_offset")
       {
@@ -206,10 +227,25 @@ rcl_interfaces::msg::SetParametersResult MergerNode::refresh_param(const std::ve
         laser_2_y_offset = param.as_double();
         RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_y_offset' to : %.3f", laser_2_y_offset);
       }
+      else if (param.get_name() == "laser_2_z_offset")
+      {
+        laser_2_z_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_z_offset' to : %.3f", laser_2_z_offset);
+      }
       else if (param.get_name() == "laser_2_yaw_offset")
       {
         laser_2_yaw_offset = param.as_double();
         RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_yaw_offset' to : %.3f", laser_2_yaw_offset);
+      }
+      else if (param.get_name() == "laser_2_pitch_offset")
+      {
+        laser_2_pitch_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_pitch_offset' to : %.3f", laser_2_pitch_offset);
+      }
+      else if (param.get_name() == "laser_2_roll_offset")
+      {
+        laser_2_roll_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_roll_offset' to : %.3f", laser_2_roll_offset);
       }
       else if (param.get_name() == "allowed_radius")
       {
@@ -327,8 +363,8 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
       tf2_msg.child_frame_id = cloud_in_1.header.frame_id + "_calibrated";
       tf2_msg.transform.translation.x = laser_1_x_offset;
       tf2_msg.transform.translation.y = laser_1_y_offset;
-      tf2_msg.transform.translation.z = 0.0;
-      tf2_quaternion.setRPY(0, 0, laser_1_yaw_offset);
+      tf2_msg.transform.translation.z = laser_1_z_offset;
+      tf2_quaternion.setRPY(laser_1_roll_offset, laser_1_pitch_offset, laser_1_yaw_offset);
       tf2_msg.transform.rotation.x = tf2_quaternion.x();
       tf2_msg.transform.rotation.y = tf2_quaternion.y();
       tf2_msg.transform.rotation.z = tf2_quaternion.z();
@@ -353,8 +389,8 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
       tf2_msg.child_frame_id = cloud_in_2.header.frame_id + "_calibrated";
       tf2_msg.transform.translation.x = laser_2_x_offset;
       tf2_msg.transform.translation.y = laser_2_y_offset;
-      tf2_msg.transform.translation.z = 0.0;
-      tf2_quaternion.setRPY(0, 0, laser_2_yaw_offset);
+      tf2_msg.transform.translation.z = laser_2_z_offset;
+      tf2_quaternion.setRPY(laser_2_roll_offset, laser_2_pitch_offset, laser_2_yaw_offset);
       tf2_msg.transform.rotation.x = tf2_quaternion.x();
       tf2_msg.transform.rotation.y = tf2_quaternion.y();
       tf2_msg.transform.rotation.z = tf2_quaternion.z();
