@@ -20,69 +20,68 @@ from launch_ros.descriptions import ComposableNode
 
 
 def generate_launch_description():
-
     ld = LaunchDescription()
 
     bag_file_path = f"{get_package_share_directory('dual_laser_merger')}/bag/dual_lidar"
 
     play_bag_node = ExecuteProcess(
-        cmd=['ros2', 'bag', 'play', bag_file_path, '--loop'],
-        output='screen',
+        cmd=["ros2", "bag", "play", bag_file_path, "--loop"],
+        output="screen",
         shell=False,
     )
 
     ld.add_action(play_bag_node)
 
     dual_laser_merger_node = ComposableNodeContainer(
-        name='demo_container',
-        namespace='',
-        package='rclcpp_components',
-        executable='component_container',
+        name="demo_container",
+        namespace="",
+        package="rclcpp_components",
+        executable="component_container",
         composable_node_descriptions=[
             ComposableNode(
-                package='dual_laser_merger',
-                plugin='merger_node::MergerNode',
-                name='dual_laser_merger',
+                package="dual_laser_merger",
+                plugin="merger_node::MergerNode",
+                name="dual_laser_merger",
                 parameters=[
-                    {'laser_1_topic': '/lidar1/scan'},
-                    {'laser_2_topic': '/lidar2/scan'},
-                    {'merged_topic': '/merged'},
-                    {'target_frame': 'lsc_mount'},
-                    {'laser_1_x_offset': 0.0},
-                    {'laser_1_y_offset': 0.0},
-                    {'laser_1_yaw_offset': 0.0},
-                    {'laser_2_x_offset': -0.04},
-                    {'laser_2_y_offset': 0.0},
-                    {'laser_2_yaw_offset': 0.0},
-                    {'tolerance': 0.01},
-                    {'queue_size': 5},
-                    {'angle_increment': 0.001},
-                    {'scan_time': 0.067},
-                    {'range_min': 0.01},
-                    {'range_max': 25.0},
-                    {'min_height': -1.0},
-                    {'max_height': 1.0},
-                    {'angle_min': -3.141592654},
-                    {'angle_max': 3.141592654},
-                    {'inf_epsilon': 1.0},
-                    {'use_inf': True},
-                    {'allowed_radius': 0.45},
-                    {'enable_shadow_filter': True},
-                    {'enable_average_filter': True},
-                    ],
+                    {"laser_1_topic": "/lidar1/scan"},
+                    {"laser_2_topic": "/lidar2/scan"},
+                    {"merged_topic": "/merged"},
+                    {"target_frame": "lsc_mount"},
+                    {"laser_1_x_offset": 0.0},
+                    {"laser_1_y_offset": 0.0},
+                    {"laser_1_yaw_offset": 0.0},
+                    {"laser_2_x_offset": -0.04},
+                    {"laser_2_y_offset": 0.0},
+                    {"laser_2_yaw_offset": 0.0},
+                    {"tolerance": 0.01},
+                    {"queue_size": 5},
+                    {"angle_increment": 0.001},
+                    {"scan_time": 0.067},
+                    {"range_min": 0.01},
+                    {"range_max": 25.0},
+                    {"min_height": -1.0},
+                    {"max_height": 1.0},
+                    {"angle_min": -3.141592654},
+                    {"angle_max": 3.141592654},
+                    {"inf_epsilon": 1.0},
+                    {"use_inf": True},
+                    {"allowed_radius": 0.45},
+                    {"enable_shadow_filter": True},
+                    {"enable_average_filter": True},
+                ],
             )
         ],
-        output='screen',
+        output="screen",
     )
 
     ld.add_action(dual_laser_merger_node)
 
     rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        output='both',
+        package="rviz2",
+        executable="rviz2",
+        output="both",
         arguments=[
-            '-d',
+            "-d",
             f"{get_package_share_directory('dual_laser_merger')}/config/rviz_config.rviz",
         ],
     )
