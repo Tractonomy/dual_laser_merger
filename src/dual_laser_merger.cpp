@@ -51,6 +51,9 @@ MergerNode::MergerNode(const rclcpp::NodeOptions& options) : Node("dual_laser_me
   message_filter->registerCallback(
       std::bind(&MergerNode::sub_callback, this, std::placeholders::_1, std::placeholders::_2));
   tf2_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+
+  param_callback_handle_ =
+      this->add_on_set_parameters_callback(std::bind(&MergerNode::refresh_param, this, std::placeholders::_1));
 }
 
 void MergerNode::declare_param()
@@ -72,7 +75,6 @@ void MergerNode::declare_param()
   range_max_param = this->declare_parameter("range_max", std::numeric_limits<double>::max());
   inf_epsilon_param = this->declare_parameter("inf_epsilon", 1.0);
   use_inf_param = this->declare_parameter("use_inf", true);
-  enable_calibration_param = this->declare_parameter("enable_calibration", false);
   laser_1_x_offset = this->declare_parameter("laser_1_x_offset", 0.0);
   laser_1_y_offset = this->declare_parameter("laser_1_y_offset", 0.0);
   laser_1_yaw_offset = this->declare_parameter("laser_1_yaw_offset", 0.0);
@@ -84,29 +86,180 @@ void MergerNode::declare_param()
   enable_average_filter_param = this->declare_parameter("enable_average_filter", false);
 }
 
-void MergerNode::refresh_param()
+rcl_interfaces::msg::SetParametersResult MergerNode::refresh_param(const std::vector<rclcpp::Parameter>& parameters)
 {
-  this->get_parameter("tolerance", tolerance_param);
-  this->get_parameter("queue_size", input_queue_size_param);
-  this->get_parameter("min_height", min_height_param);
-  this->get_parameter("max_height", max_height_param);
-  this->get_parameter("angle_min", angle_min_param);
-  this->get_parameter("angle_max", angle_max_param);
-  this->get_parameter("angle_increment", angle_increment_param);
-  this->get_parameter("scan_time", scan_time_param);
-  this->get_parameter("range_min", range_min_param);
-  this->get_parameter("range_max", range_max_param);
-  this->get_parameter("inf_epsilon", inf_epsilon_param);
-  this->get_parameter("use_inf", use_inf_param);
-  this->get_parameter("laser_1_x_offset", laser_1_x_offset);
-  this->get_parameter("laser_1_y_offset", laser_1_y_offset);
-  this->get_parameter("laser_1_yaw_offset", laser_1_yaw_offset);
-  this->get_parameter("laser_2_x_offset", laser_2_x_offset);
-  this->get_parameter("laser_2_y_offset", laser_2_y_offset);
-  this->get_parameter("laser_2_yaw_offset", laser_2_yaw_offset);
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "OK";
+
   this->get_parameter("allowed_radius", allowed_radius_param);
   this->get_parameter("enable_shadow_filter", enable_shadow_filter_param);
   this->get_parameter("enable_average_filter", enable_average_filter_param);
+  for (const auto& param : parameters)
+  {
+    try
+    {
+      if (param.get_name() == "tolerance")
+      {
+        auto temp = param.as_double();
+        if (temp < 0.0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException("'tolerance' should be greater than or equal to 0.0s .");
+        }
+        tolerance_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'tolerance' to : %.4f", tolerance_param);
+      }
+      else if (param.get_name() == "queue_size")
+      {
+        auto temp = param.as_int();
+        if (temp < 0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException("'queue_size' should be greater than or equal to 0 .");
+        }
+        input_queue_size_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'queue_size' to : %d", input_queue_size_param);
+      }
+      else if (param.get_name() == "min_height")
+      {
+        min_height_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'min_height' to : %.3f", min_height_param);
+      }
+      else if (param.get_name() == "max_height")
+      {
+        max_height_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'max_height' to : %.3f", max_height_param);
+      }
+      else if (param.get_name() == "angle_min")
+      {
+        angle_min_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'angle_min' to : %.3f", angle_min_param);
+      }
+      else if (param.get_name() == "angle_max")
+      {
+        angle_max_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'angle_max' to : %.3f", angle_max_param);
+      }
+      else if (param.get_name() == "angle_increment")
+      {
+        auto temp = param.as_double();
+        if (temp < 0.0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException(
+              "'angle_increment' should be greater than or equal to 0.0rad .");
+        }
+        angle_increment_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'angle_increment' to : %.5f", angle_increment_param);
+      }
+      else if (param.get_name() == "scan_time")
+      {
+        auto temp = param.as_double();
+        if (temp < 0.0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException(
+              "'scan_time' should be greater than or equal to 0.0rad .");
+        }
+        scan_time_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'scan_time' to : %.5f", scan_time_param);
+      }
+      else if (param.get_name() == "range_min")
+      {
+        range_min_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'range_min' to : %.3f", range_min_param);
+      }
+      else if (param.get_name() == "range_max")
+      {
+        range_max_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'range_max' to : %.3f", range_max_param);
+      }
+      else if (param.get_name() == "inf_epsilon")
+      {
+        inf_epsilon_param = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'inf_epsilon' to : %.3f", inf_epsilon_param);
+      }
+      else if (param.get_name() == "use_inf")
+      {
+        use_inf_param = param.as_bool();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'use_inf' to : %s", use_inf_param ? "True" : "False");
+      }
+      else if (param.get_name() == "laser_1_x_offset")
+      {
+        laser_1_x_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_x_offset' to : %.3f", laser_1_x_offset);
+      }
+      else if (param.get_name() == "laser_1_y_offset")
+      {
+        laser_1_y_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_y_offset' to : %.3f", laser_1_y_offset);
+      }
+      else if (param.get_name() == "laser_1_yaw_offset")
+      {
+        laser_1_yaw_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_1_yaw_offset' to : %.3f", laser_1_yaw_offset);
+      }
+      else if (param.get_name() == "laser_2_x_offset")
+      {
+        laser_2_x_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_x_offset' to : %.3f", laser_2_x_offset);
+      }
+      else if (param.get_name() == "laser_2_y_offset")
+      {
+        laser_2_y_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_y_offset' to : %.3f", laser_2_y_offset);
+      }
+      else if (param.get_name() == "laser_2_yaw_offset")
+      {
+        laser_2_yaw_offset = param.as_double();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'laser_2_yaw_offset' to : %.3f", laser_2_yaw_offset);
+      }
+      else if (param.get_name() == "allowed_radius")
+      {
+        auto temp = param.as_double();
+        if (temp < 0.0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException(
+              "'allowed_radius' should be greater than or equal to 0.0m .");
+        }
+        allowed_radius_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'allowed_radius' to : %.3f", allowed_radius_param);
+      }
+      else if (param.get_name() == "enable_shadow_filter")
+      {
+        enable_shadow_filter_param = param.as_bool();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'enable_shadow_filter' to : %s",
+                     enable_shadow_filter_param ? "True" : "False");
+      }
+      else if (param.get_name() == "enable_average_filter")
+      {
+        enable_average_filter_param = param.as_bool();
+        RCLCPP_DEBUG(this->get_logger(), "Set 'enable_average_filter' to : %s",
+                     enable_average_filter_param ? "True" : "False");
+      }
+      else
+      {
+        result.successful = false;
+        result.reason = "'" + param.get_name() + "' is not a dynamic parameter.";
+        RCLCPP_WARN(this->get_logger(), result.reason.c_str());
+        break;
+      }
+    }
+    catch (rclcpp::exceptions::InvalidParametersException& e)
+    {
+      RCLCPP_WARN(this->get_logger(),
+                  "Attempted to set '%s' parameter but the provided value was not accepted. Reason: %s",
+                  param.get_name().c_str(), e.what());
+      result.successful = false;
+      result.reason = e.what();
+    }
+    catch (rclcpp::exceptions::InvalidParameterTypeException& e)
+    {
+      RCLCPP_WARN(this->get_logger(),
+                  "Attempted to set '%s' parameter but the provided value was of the wrong type. Reason: %s",
+                  param.get_name().c_str(), e.what());
+      result.successful = false;
+      result.reason = e.what();
+    }
+  }
+  return result;
 }
 
 void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& lidar_1_msg,
@@ -118,12 +271,6 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
   }
   else
   {
-    this->get_parameter<bool>("enable_calibration", enable_calibration_param);
-    if (enable_calibration_param)
-    {
-      refresh_param();
-    }
-
     if (enable_average_filter_param)
     {
       lidar_1_avg = *lidar_1_msg;
