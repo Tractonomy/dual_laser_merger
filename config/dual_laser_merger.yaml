@@ -1,0 +1,32 @@
+/**:
+  ros__parameters:
+    merged_scan_topic: "/virtual_lidar/scan_raw"
+    merged_cloud_topic: "/virtual_lidar/cloud_raw"
+    target_frame: "virtual_lidar"
+    laser_1_x_offset: 0.0
+    laser_1_y_offset: 0.0
+    laser_1_z_offset: 0.0
+    laser_1_yaw_offset: 0.0
+    laser_1_pitch_offset: 0.0
+    laser_1_roll_offset: 0.0
+    laser_2_x_offset: 0.0
+    laser_2_y_offset: 0.0
+    laser_2_z_offset: 0.0
+    laser_2_yaw_offset: 0.0
+    laser_2_pitch_offset: 0.0
+    laser_2_roll_offset: 0.0
+    tolerance: 0.03333
+    queue_size: 4
+    angle_increment: 0.00296706
+    scan_time: 0.067
+    range_min: 0.01
+    range_max: 25.0
+    min_height: -1.0
+    max_height: 1.0
+    angle_min: -3.141592654
+    angle_max: 3.141592654
+    inf_epsilon: 1.0
+    use_inf: True
+    allowed_radius: 0.45
+    enable_shadow_filter: False
+    enable_average_filter: False
