@@ -70,7 +70,8 @@ void MergerNode::declare_param()
   angle_min_param = this->declare_parameter("angle_min", -M_PI);
   angle_max_param = this->declare_parameter("angle_max", M_PI);
   angle_increment_param = this->declare_parameter("angle_increment", M_PI / 180.0);
-  scan_time_param = this->declare_parameter("scan_time", 1.0 / 30.0);
+  scan_time_param = this->declare_parameter("scan_time", NAN);
+  time_increment_param = this->declare_parameter("time_increment", NAN);
   range_min_param = this->declare_parameter("range_min", 0.0);
   range_max_param = this->declare_parameter("range_max", std::numeric_limits<double>::max());
   inf_epsilon_param = this->declare_parameter("inf_epsilon", 1.0);
@@ -166,6 +167,17 @@ rcl_interfaces::msg::SetParametersResult MergerNode::refresh_param(const std::ve
         }
         scan_time_param = std::move(temp);
         RCLCPP_DEBUG(this->get_logger(), "Set 'scan_time' to : %.5f", scan_time_param);
+      }
+      else if (param.get_name() == "time_increment")
+      {
+        auto temp = param.as_double();
+        if (temp < 0.0)
+        {
+          throw rclcpp::exceptions::InvalidParametersException(
+              "'time_increment' should be greater than or equal to 0.0rad .");
+        }
+        time_increment_param = std::move(temp);
+        RCLCPP_DEBUG(this->get_logger(), "Set 'time_increment' to : %.5f", time_increment_param);
       }
       else if (param.get_name() == "range_min")
       {
@@ -448,6 +460,7 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
     }
 
     pcl::toROSMsg(pcl_cloud_out, cloud_out);
+
     merged_cloud_pub->publish(cloud_out);
 
     merged.header = cloud_out.header;
@@ -456,8 +469,11 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
     merged.angle_min = angle_min_param;
     merged.angle_max = angle_max_param;
     merged.angle_increment = angle_increment_param;
-    merged.time_increment = 0.0;
-    merged.scan_time = scan_time_param;
+    merged.time_increment = std::isnan(time_increment_param) ?
+                                (lidar_1_msg->time_increment + lidar_2_msg->time_increment) / 2.0 :
+                                time_increment_param;
+    merged.scan_time =
+        std::isnan(scan_time_param) ? (lidar_1_msg->scan_time + lidar_2_msg->scan_time) / 2.0 : scan_time_param;
     merged.range_min = range_min_param;
     merged.range_max = range_max_param;
 
@@ -471,7 +487,6 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
     {
       merged.ranges.assign(ranges_size, merged.range_max + inf_epsilon_param);
     }
-
     for (sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x"), iter_y(cloud_out, "y"),
          iter_z(cloud_out, "z");
          iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
@@ -498,6 +513,8 @@ void MergerNode::sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&
       if (range < merged.ranges[index])
       {
         merged.ranges[index] = range;
+        // TODO: Add way of also attributing intensity. This is a good start but it did not work:
+        // (https://stackoverflow.com/questions/76372315/keep-intesity-when-converting-pcl-pointcloudpointxyzi-to-ros-pointcloud2)
       }
     }
 
