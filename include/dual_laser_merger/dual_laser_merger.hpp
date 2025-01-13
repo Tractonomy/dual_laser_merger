@@ -47,20 +47,22 @@ namespace merger_node
 class MergerNode : public rclcpp::Node
 {
 public:
-  explicit MergerNode(const rclcpp::NodeOptions & options);
+  explicit MergerNode(const rclcpp::NodeOptions& options);
 
 private:
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener;
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf2_broadcaster;
-  std::shared_ptr<message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<
-      sensor_msgs::msg::LaserScan, sensor_msgs::msg::LaserScan>>>
-  message_filter;
+  std::shared_ptr<message_filters::Synchronizer<
+      message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::LaserScan, sensor_msgs::msg::LaserScan>>>
+      message_filter;
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> laser_1_sub;
   message_filters::Subscriber<sensor_msgs::msg::LaserScan> laser_2_sub;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr merged_scan_pub;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr merged_cloud_pub;
   laser_geometry::LaserProjection projector;
+
+  OnSetParametersCallbackHandle::SharedPtr param_callback_handle_;
 
   sensor_msgs::msg::LaserScan lidar_1_avg;
   sensor_msgs::msg::LaserScan lidar_2_avg;
@@ -76,12 +78,12 @@ private:
 
   int input_queue_size_param;
   std::string target_frame_param;
-  double tolerance_param, min_height_param, max_height_param, angle_min_param, angle_max_param,
-    angle_increment_param, scan_time_param, range_min_param, range_max_param, inf_epsilon_param,
-    laser_1_x_offset, laser_1_y_offset, laser_1_yaw_offset, laser_2_x_offset, laser_2_y_offset,
-    laser_2_yaw_offset, allowed_radius_param;
-  bool use_inf_param, enable_calibration_param, enable_shadow_filter_param,
-    enable_average_filter_param;
+  double tolerance_param, min_height_param, max_height_param, angle_min_param, angle_max_param, angle_increment_param,
+      scan_time_param, range_min_param, range_max_param, inf_epsilon_param, laser_1_x_offset, laser_1_y_offset,
+      laser_1_z_offset, laser_1_yaw_offset, laser_1_pitch_offset, laser_1_roll_offset, laser_2_x_offset,
+      laser_2_y_offset, laser_2_z_offset, laser_2_yaw_offset, laser_2_pitch_offset, laser_2_roll_offset,
+      allowed_radius_param;
+  bool use_inf_param, enable_shadow_filter_param, enable_average_filter_param;
   uint32_t ranges_size;
   double range, angle;
   int index, numNearbyPoints;
@@ -91,11 +93,10 @@ private:
   std::vector<int> pointIndices;
   std::vector<float> pointDistances;
 
-  void sub_callback(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & lidar_1_msg,
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & lidar_2_msg);
+  void sub_callback(const sensor_msgs::msg::LaserScan::ConstSharedPtr& lidar_1_msg,
+                    const sensor_msgs::msg::LaserScan::ConstSharedPtr& lidar_2_msg);
   void declare_param();
-  void refresh_param();
+  rcl_interfaces::msg::SetParametersResult refresh_param(const std::vector<rclcpp::Parameter>& parameters);
 };
 
 }  // namespace merger_node
